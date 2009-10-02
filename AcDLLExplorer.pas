@@ -27,7 +27,8 @@ type
       FFileName: string;
       FRegisterd: boolean;
       FMemMgt: boolean;
-      FOldMemMgr: TAcMemoryManager;
+      FOldMemMgr: TAcMemoryManagerBuf;
+      FOldMemMgrSize: Byte;
       function GetLoaded: boolean;
       procedure ClearClassEntries;
     public
@@ -164,6 +165,8 @@ end;
 
 
 function TAcPluginDLL.LoadPlugin(AName: string): boolean;
+var
+  memmgr: TAcMemoryManager;
 begin
   result := false;
 
@@ -195,8 +198,12 @@ begin
       //...assign the memory manager...
       if Assigned(FDLLMemMgt) then
       begin
-        GetMemoryManager(FOldMemMgr);
-        FDLLMemMgt(FOldMemMgr); //The old memory manager will be stored in the var-parameter
+        GetMemoryManager(memmgr);
+
+        Move(memmgr, FOldMemMgr[0], SizeOf(memmgr));
+        FOldMemMgrSize := SizeOf(memmgr);
+        
+        FDLLMemMgt(@FOldMemMgr, FOldMemMgrSize); //The old memory manager will be stored in the var-parameter
 
         FMemMgt := true;        
       end;      
@@ -259,9 +266,10 @@ begin
 
     //Restore the old dll memory manager
     if FMemMgt then
-      FDLLMemMgt(FOldMemMgr);
+      FDLLMemMgt(@FOldMemMgr, FOldMemMgrSize);
     FMemMgt := false;
-    FillChar(FOldMemMgr, SizeOf(TMemoryManagerEx), 0);
+    FillChar(FOldMemMgr, SizeOf(FOldMemMgr), 0);
+    FOldMemMgrSize := 0;
 
     //Finalize the DLL
     if Assigned(FDLLFinalize) then

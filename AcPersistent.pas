@@ -121,11 +121,14 @@ type
       property SourceCount: integer read FSourceCount;
   end;
 
-  {$IFDEF FPC}
-  TAcMemoryManager = TMemoryManager;
-  {$ELSE}
+  {$IF Declared(TMemoryManagerEx)}
   TAcMemoryManager = TMemoryManagerEx;
-  {$ENDIF}
+  {$ELSE}
+  TAcMemoryManager = TMemoryManager;
+  {$IFEND}
+
+  TAcMemoryManagerBuf = array[0..128] of Byte;
+  PAcMemoryManagerBuf = ^TAcMemoryManagerBuf;  
 
   TAcRegSrvVerStr = string[20];
 
@@ -135,7 +138,8 @@ type
     ASender: Pointer; AVer: TAcRegSrvVerStr): integer;
   TAcDLLInitProc = procedure;
   TAcDLLFinalizeProc = procedure;
-  TAcDLLMemoryManagerProc = procedure(var AManager: TAcMemoryManager);
+
+  TAcDLLMemoryManagerProc = procedure(AManager: PAcMemorymanagerBuf; var ASize: Byte);
 
 const
   acceOk = 0;
@@ -150,10 +154,12 @@ var
 {$ENDIF}
 
 function AcDLLExportClasses(ACallback: TAcEnumClassProc; ASender: Pointer; AVer: TAcRegSrvVerStr): integer;
+
 procedure AcDLLRegisterProc(ASender: Pointer; AEntry: PAcRegisteredClassEntry);
 procedure AcDLLInit;
 procedure AcDLLFinalize;
-procedure AcDLLMemMgt(var AManager: TAcMemoryManager);
+procedure AcDLLMemMgt(AManager: PAcMemorymanagerBuf; var ASize: Byte);
+
 function AcIsClass(AClass: ShortString; AIdentStr: ShortString): boolean;
 
 
@@ -422,7 +428,7 @@ begin
     FNotifyEvents.StartIteration;
     while not FNotifyEvents.ReachedEnd do
       TAcRegSrvNotifyEvent((FNotifyEvents.GetCurrent));
-  end;    
+  end;
 end;
 
 function IntToHex(AVal: Integer): string;
@@ -488,18 +494,32 @@ begin
   end;
 end;
 
-procedure AcDLLMemMgt(var AManager: TAcMemoryManager);
+procedure AcDLLMemMgt(AManager: PAcMemorymanagerBuf; var ASize: Byte);
 var
-  tmp: TAcMemoryManager;
+  old, new: TAcMemoryManager;
 begin
   //Store the old memory manager
-  GetMemoryManager(tmp);
+  GetMemoryManager(old);
+
+  //Initialize the new memory manager record and copy the new data into it
+  FillChar(new, SizeOf(TAcMemoryManager), 0);
+
+  //If the given size is greater than our own memory manager record, we should
+  //only use our own size.
+  if ASize >= SizeOf(TAcMemoryManager) then
+    Move(AManager^[0], new, SizeOf(TAcMemoryManager))
+  else
+  //If the given size is smaller than our own memory manager record, we should
+  //use this size instead of our own.
+    Move(AManager^[0], new, ASize);
 
   //Store the new memory manager and set it
-  SetMemoryManager(AManager);
+  SetMemoryManager(new);
 
   //Return the old memory manager
-  AManager := tmp;
+  FillChar(AManager^[0], SizeOf(TAcMemoryManagerBuf), 0);
+  Move(old, AManager^[0], SizeOf(TAcMemoryManager));
+  ASize := SizeOf(TAcMemoryManager);
 end;
 
 initialization
