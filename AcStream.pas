@@ -175,7 +175,7 @@ end;
 
 function TAcSandboxedStreamAdapter.Write(const Buffer; Count: Integer): Longint;
 begin
-  result := 0;
+{$IFDEF FPC}result := 0;{$ENDIF}
   raise EAcStreamIO.Create(MsgIOErrWrite);
 end;
 
