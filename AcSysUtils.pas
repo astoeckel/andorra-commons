@@ -171,7 +171,7 @@ begin
   fpu_word := get8087cw;
 
   {$IFDEF WIN32}
-  //On Windows prevent the PE-Loader from showing up any exceptions
+  //On Windows prevent the PE-Loader from showing any exceptions
   SetErrorMode(SEM_FAILCRITICALERRORS);
   {$ENDIF}
 
@@ -189,12 +189,16 @@ end;
 
 function AcGetProcAddress(AHandle: TAcHandle; AProcName: string): Pointer;
 begin
-  result := GetProcAddress(AHandle, PChar(AProcName));
+  result := nil;
+  if AHandle <> 0 then
+    result := GetProcAddress(AHandle, PChar(AProcName));
 end;
 
 function AcFreeLibrary(AHandle: TAcHandle): Boolean;
 begin
-  result := FreeLibrary(AHandle);
+  result := false;
+  if AHandle <> 0 then
+    result := FreeLibrary(AHandle);
 end;
 
 initialization

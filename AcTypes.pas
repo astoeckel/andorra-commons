@@ -40,6 +40,9 @@ type
   end;
   PAcVector4 = ^TAcVector4;
 
+  {A standard 4x4 matrix.}
+  TAcMatrix = array[0..3] of array[0..3] of single;
+
 function AcVector1(AX:single): TAcVector1;overload;
 {Returns a vector with two components.}
 function AcVector2(AX,AY:single):TAcVector2;overload;
@@ -85,6 +88,12 @@ function AcVectorMul(AVec: TAcVector3; r: Single): TAcVector3;overload;
 function AcVectorMul(AVec: TAcVector4; r: Single): TAcVector4;overload;
 
 function AcVectorCross(AVec1, AVec2: TAcVector3): TAcVector3;overload;
+
+const
+  {A matrix which only contains zero values}
+  AcMatrix_Clear    : TAcMatrix = ((0,0,0,0),(0,0,0,0),(0,0,0,0),(0,0,0,0));
+  {A identity matrix.}
+  AcMatrix_Identity : TAcMatrix = ((1,0,0,0),(0,1,0,0),(0,0,1,0),(0,0,0,1));
 
 implementation
 

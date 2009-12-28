@@ -21,7 +21,7 @@
 *   included.
 }
 
-{Contains various classes that are usefull for buffering data. A simple buffered
+{Contains various classes that are useful for buffering data. A simple buffered
  filestream class that speeds up byte access on file streams is also included.}
 unit AcBuffer;
 
