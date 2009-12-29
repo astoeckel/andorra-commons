@@ -36,5 +36,9 @@
 //Remove ' if you do not want to use any x86 ASM code
 {'$DEFINE DO_NOT_USE_ASM}
 
+
+{'$DEFINE DO_NOT_USE_VCL}
+
 {$ENDIF}
+
 

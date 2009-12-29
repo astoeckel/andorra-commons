@@ -266,15 +266,15 @@ end;
 function AcVectorMul(AVec: TAcVector1; r: Single): TAcVector1;overload;
 begin
   with result do
-    result.x := result.x * r;
+    result.x := AVec.x * r;
 end;
 
 function AcVectorMul(AVec: TAcVector2; r: Single): TAcVector2;overload;
 begin
   with result do
   begin
-    result.x := result.x * r;
-    result.y := result.y * r;
+    result.x := AVec.x * r;
+    result.y := AVec.y * r;
   end;
 end;
 
@@ -282,9 +282,9 @@ function AcVectorMul(AVec: TAcVector3; r: Single): TAcVector3;overload;
 begin
   with result do
   begin
-    result.x := result.x * r;
-    result.y := result.y * r;
-    result.z := result.z * r;
+    result.x := AVec.x * r;
+    result.y := AVec.y * r;
+    result.z := AVec.z * r;
   end;
 end;
 
@@ -292,10 +292,10 @@ function AcVectorMul(AVec: TAcVector4; r: Single): TAcVector4;overload;
 begin
   with result do
   begin
-    result.x := result.x * r;
-    result.y := result.y * r;
-    result.z := result.z * r;
-    result.w := result.w * r;
+    result.x := AVec.x * r;
+    result.y := AVec.y * r;
+    result.z := AVec.z * r;
+    result.w := AVec.w * r;
   end;
 end;
 

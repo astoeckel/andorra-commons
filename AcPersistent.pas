@@ -499,6 +499,7 @@ var
   old, new: TAcMemoryManager;
 begin
   //Store the old memory manager
+  FillChar(old, SizeOf(TAcMemoryManager), 0);
   GetMemoryManager(old);
 
   //Initialize the new memory manager record and copy the new data into it
