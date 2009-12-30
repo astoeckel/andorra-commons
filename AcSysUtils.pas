@@ -42,7 +42,7 @@ interface
 
 {$IFNDEF WIN32}
 uses
-  SysUtils, LclIntf, libc, cThreads, dynlibs,
+  SysUtils, LclIntf, libc, cThreads, dynlibs;
 {$ELSE}
 uses
   Windows;
