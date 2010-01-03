@@ -1394,8 +1394,7 @@ initialization
   AcStoreAddAlias(TAcStringNode, 's');
   AcStoreAddAlias(TAcBoolNode, 'b');
   AcStoreAddAlias(TAcStreamNode, 'x');
-  AcStoreAddAlias(TAcLinkNode, 'l');
-
+  AcStoreAddAlias(TAcLinkNode, 'l'); 
 
 finalization
   AcStoreAliasList.Free;
