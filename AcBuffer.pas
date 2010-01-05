@@ -313,7 +313,7 @@ procedure TAcBufferBucket.WriteData(ABuf: PByte; ASize: Integer);
 begin
   if ASize > FMemorySize then
   begin
-    FMemory := ReallocMemory(FMemory, ASize);
+    ReallocMem(FMemory, ASize);
     FMemorySize := ASize;
   end;
 

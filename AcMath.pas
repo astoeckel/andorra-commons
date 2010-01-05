@@ -1,24 +1,34 @@
-{
-* THIS PROGRAM IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OR
-* CONDITIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED INCLUDING, WITHOUT
-* LIMITATION, ANY WARRANTIES OR CONDITIONS OF TITLE, NON-INFRINGEMENT,
-* MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.
-*
-* This program is licensed under the Common Public License (CPL) Version 1.0
-* You should have recieved a copy of the license with this file.
-* If not, see http://www.opensource.org/licenses/cpl1.0.txt for more informations.
-* You also should have recieved a copy of this license with this file.
-* 
-* Inspite of the incompatibility between the Common Public License (CPL) and the GNU General Public License (GPL) you're allowed to use this program 
-* under the GPL. 
-* If not, see http://www.gnu.org/licenses/gpl.txt for more informations.
-*
-* Project: Andorra Commons
-* Author:  Andreas Stoeckel
-* File: AcBuffer.pas
-* Comment: Contains various classes that are usefull for buffering data. A simple
-*   buffered filestream class that speeds up byte access on file streams is also
-*   included.
+{*******************************************************}
+{                                                       }
+{       Andorra Commons General Purpose Library         }
+{       Copyright (c) Andreas Stöckel, 2009             }
+{       Andorra Commons is an "Andorra Suite" Project   }
+{                                                       }
+{*******************************************************}
+
+{The contents of this file are subject to the Mozilla Public License Version 1.1
+(the "License"); you may not use this file except in compliance with the
+License. You may obtain a copy of the License at http://www.mozilla.org/MPL/
+
+Software distributed under the License is distributed on an "AS IS" basis,
+WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for
+the specific language governing rights and limitations under the License.
+
+The Initial Developer of the Original Code is
+Andreas Stöckel. All Rights Reserved.
+
+Alternatively, the contents of this file may be used under the terms of the
+GNU General Public License license (the “GPL License”), in which case the provisions of
+GPL License are applicable instead of those above. If you wish to allow use
+of your version of this file only under the terms of the GPL License and not
+to allow others to use your version of this file under the MPL, indicate your
+decision by deleting the provisions above and replace them with the notice and
+other provisions required by the GPL License. If you do not delete the
+provisions above, a recipient may use your version of this file under either the
+MPL or the GPL License.
+
+File: AcMath.pas
+Author: Andreas Stöckel
 }
 
 {Parts of this unit were taken from the "VectorGeometry.pas" originaly by Dipl.

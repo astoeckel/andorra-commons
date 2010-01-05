@@ -82,7 +82,9 @@ type
    about the registered class entry.}
   TAcEnumClassProc = procedure(ASender: Pointer; AEntry: PAcRegisteredClassEntry);
 
-  {TAcRegistrationServer copes with registering }
+  {TAcRegistrationServer copes with registering classes derrived from TAcPersistent.
+   The registration server is also responsible for integrating classes of shared
+   libraries into the application.}
   TAcRegistrationServer = class
     private
       FClasses: TAcLinkedList;
@@ -91,33 +93,129 @@ type
       FSourceCount: integer;
       procedure Notify;
     public
+      {Creates a new instance of the TAcRegistration server. You should not have
+       to create own instances of TAcRegistrations server as an instance with the
+       name "AcRegSrv" is automatically created within the unit "AcPersistent".
+       @seealso(AcRegSrv)}
       constructor Create;
+
+      {Destroys the instance of TAcRegistration server.}
       destructor Destroy;override;
 
+      {When performing many register and unregister operations use the "BeginUpdate"
+       and "EndUpdate" functions to prevent the registered notify events from being
+       called every time a class is registered or removed. Instead, a single notify
+       event fill be triggered when "EndUpdate" is called.
+       @seealso(EndUpdate)
+       @seealso(RegisterClass)
+       @seealso(UnregisterClass)
+       @seealso(UnregisterSource)
+       @seealso(RegisterNotifyEvent)}
       procedure BeginUpdate;
+      {When performing many register and unregister operations use the "BeginUpdate"
+       and "EndUpdate" functions to prevent the registered notify events from being
+       called every time a class is registered or removed. Instead, a single notify
+       event fill be triggered when "EndUpdate" is called.
+       @seealso(BeginUpdate)
+       @seealso(RegisterClass)
+       @seealso(UnregisterClass)
+       @seealso(UnregisterSource)
+       @seealso(RegisterNotifyEvent)}
       procedure EndUpdate;
 
-      procedure RegisterClass(AClass: TAcPersistentClass; AClassConstructor: Pointer);overload;
-      procedure RegisterClass(const AEntry: TAcRegisteredClassEntry);overload;
+      {Registers a new class with in the registration server. The following is an
+       example how you could register a class named "TMyObject" inside the registration
+       server:
+       @code(function CreateMyObject(AProperty: Integer): TMyObject;
+begin
+  result := TMyObject.Create(AProperty);
+end;
 
+initialization
+  AcRegSrv.RegisterClass(TMyObject, @CreateMyObject))
+       Internally this version of register class fills a TAcRegisteredClassEntry record
+       and adds it to the list.
+       @param(AClass is a class reference identifier. E.g. TMyObject.)
+       @param(AClassConstructor is a pointer to a function which creates a new instance
+         of the class)
+       @seealso(TAcRegisteredClassEntry)}
+      procedure RegisterClass(AClass: TAcPersistentClass; AClassConstructor: Pointer);overload;
+      {Registers a predefined TAcRegisteredClassEntry record. This function is merely used
+       internally for coping data from one registration server to another. You
+       should prefer using the other version of Register class for registering
+       your own classes.
+       @seealso(TAcRegisteredClassEntry)}
+      procedure RegisterClass(const AEntry: TAcRegisteredClassEntry);overload;
+      {Unregisters a class with a certain name. Classes do not have to be unregistered
+       at the end of the program! Unregistering classes should only be done if a class
+       gets inaccessible because e.g. a plugin dll gets unloaded. Example:
+       @code(AcRegSrv.UnregisterClass(TMyObject.ClassName))}
       procedure UnregisterClass(AName: ShortString);
+      {Removes all classes with a certain source id from the list.
+       @seealso(TAcRegisteredClassEntry.SourceID)}
       procedure UnregisterSource(ASourceID: integer);
 
+      {Returns the pointer to the constructor of a certain class. Returns @nil if
+       the class has not been found. Example usage:
+       @code(type
+  TMyObjectConstructor = function(AProperty: Integer): TMyObject;
+  TMyObject2 = class(TMyObject);
+
+var
+  proc: TMyObjectConstructor;
+  obj: TMyObject;
+begin
+  proc := AcRegSrv.GetConstructor('TMyObject2');
+  if Assigned(proc) then
+    obj := proc(1);
+end;)}
       function GetConstructor(const AName: ShortString): Pointer;
+      {Returns the pointer to a registered class entry. Returns @nil if the class
+       has not been found among the registered classes.}
       function GetEntry(const AName: ShortString): PAcRegisteredClassEntry;overload;
 
+      {Enumerates all classes derrived from a class with a certain name. For
+       each class found the callback function defined by ACallback gets called.
+       "ASender" is a user defined parameter which can e.g. be used to identify
+       the instance of the calling object.
+       @seealso(TAcEnumClassProc).}
       procedure EnumClasses(const AClassName: ShortString;
         ACallback: TAcEnumClassProc; ASender: Pointer = nil);overload;
+      {Enumerates all classes derrived from "AClass". For each class found the callback
+       function defined by ACallback gets called. "ASender" is a user defined parameter
+       which can e.g. be used to identify the instance of the calling object.
+       @seealso(TAcEnumClassProc).}
       procedure EnumClasses(AClass: TAcPersistentClass;
         ACallback: TAcEnumClassProc; ASender: Pointer = nil);overload;
 
+      {Registers a notify event of the type TAcRegSrvNotifyEvent. The notify
+       events gets called each time a class is added or removed. This behaviour
+       can be controled using the methods "BeginUpdate" and "EndUpdate".
+       @seealso(TAcRegSrvNotifyEvent)
+       @seealso(UnregisterNotifyEvent)
+       @seealso(BeginUpdate)
+       @seealso(EndUpdate)}
       procedure RegisterNotifyEvent(ACode: Pointer);
+
+      {Removes a certain procedure from the notify event list.}
       procedure UnregisterNotifyEvent(ACode: Pointer);
 
+      {Increments the internal source index by one. IncSourceCount should be called if
+       you're adding classes from a new source (plugin) to the application. The
+       current source count can be retrieved using the SourceCount property.
+       The current source cound should be set in the TAcRegisterdClassEntry record
+       when adding it to the registration server.
+       @seealso(SourceCount)}
       procedure IncSourceCount;
 
+      {Prints a table containg all registered classes, their inheritance tree,
+       sourceid and constructor to stdout.}
       procedure DbgDump;
 
+      {Contains the current source index, which may be used to identify class sources
+       (plugins). When adding new classes from a certain source, the "SourceID" value
+       inside TAcRegisteredClass entry should be set to the current source count value.
+       @seealso(IncSourceCount)}
       property SourceCount: integer read FSourceCount;
   end;
 
