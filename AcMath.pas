@@ -75,9 +75,14 @@ var
   {Returns a matrix for rotation around the X, Y and Z-Axis}
   AcMatrix_Rotation: function(const ax, ay, az: single):TAcMatrix;
 
-
+{AcMatrix_Proj_Perspective creates a 3D projection matrix.}
 function AcMatrix_Proj_Perspective(const fovy, aspect, zNear, zFar: double): TAcMatrix;
+
+{AcMatrix_Proj_Ortho creates a orthogonal 3D projection matrix.}
 function AcMatrix_Proj_Ortho(const left, right, bottom, top, zNear, zFar: double): TAcMatrix;
+
+{AcMatrix_View_LookAt creates a modell view matrix. This matrix is used to describe
+ the camera.}
 function AcMatrix_View_LookAt(const Pos, Dir, Up: TAcVector3): TAcMatrix;
 
 function AcVector_Length(const AVec: TAcVector3): Double;
@@ -451,9 +456,11 @@ end;
 {The procedures listed here are taken from the VectorGeometry.pas from the
  GLScene project. For more details see above.}
 
+{$IFDEF SUPPORTS_MESSAGE}
 {$MESSAGE HINT 'Andorra Commons may use the AMD 3DNow optimization. This code is not tested!'}
-{$MESSAGE HINT 'If you encounter any problem, activate the DO_NOT_USE_3DNOW compiler switch in andorra_conf.inc and report this problem to the Andorra 2D developers. Thank you.'}
+{$MESSAGE HINT 'If you encounter any problem, activate the DO_NOT_USE_3DNOW compiler switch in andorra_conf.inc and report this problem to the Andorra Commons developers. Thank you.'}
 {$MESSAGE HINT 'If you are using an AMD processor and everything works fine, it would be great if you could report this.'}
+{$ENDIF}
 
 function _3DNOW_AcMatrix_Multiply(const amat1, amat2:TAcMatrix):TAcMatrix;
 begin

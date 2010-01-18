@@ -36,7 +36,10 @@
 //Remove ' if you do not want to use any x86 ASM code
 {'$DEFINE DO_NOT_USE_ASM}
 
+//--------------------------------
+//--- ANDORRA VCL SETTINGS ---
 
+//Remove ' if you do not want to use the VCL in your application.
 {$DEFINE DO_NOT_USE_VCL}
 
 {$ENDIF}
