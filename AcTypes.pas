@@ -73,8 +73,6 @@ type
   AcDouble = Double;
   //Signed integer which has the same size as a pointer
   AcPtrInt = ptrint;
-  //Unsigned integer which has the same size as a pointer
-  AcUPTrInt = uptrint;
   //8-Bit Boolean value
   AcBool = ByteBool;
   {$ELSE}
@@ -98,8 +96,6 @@ type
   AcDouble = Double;
   //Signed integer which has the same size as a pointer
   AcPtrInt = Integer;
-  //Unsigned integer which has the same size as a pointer
-  AcUPtrInt = Cardinal;
   //8-Bit Boolean value
   AcBool = ByteBool;
   {$ENDIF}
