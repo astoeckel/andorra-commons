@@ -80,7 +80,6 @@ function AcGetProcAddress(AHandle: TAcHandle; AProcName: string): Pointer;
 {Frees an loaded library.}
 function AcFreeLibrary(AHandle: TAcHandle): Boolean;
 
-
 var
   AcGetTickCount: TAcGetTickCountProc;
 
