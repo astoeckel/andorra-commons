@@ -32,13 +32,13 @@ Author: Andreas Stöckel
 }
 
 {Parts of this unit were taken from the "VectorGeometry.pas" originaly by Dipl.
- Ing. Mike Lischke (public@lischke-online.de) from the GLScene project 
+ Ing. Mike Lischke (public@lischke-online.de) from the GLScene project
  (http://glscene.sf.net/). This code is published under the MPL.
  See http://glscene.cvs.sourceforge.net/viewvc/*checkout*/glscene/Source/Base/VectorGeometry.pas
  to get the original source code.
  If you define the "DO_NOT_USE_3DNOW" compiler switch in the andorra_conf.inc or
  your project settings, all code that was taken from this unit will be
- deactivated.}      
+ deactivated.}
 
 {Contains optimized mathematical functions for matrix and vector calculations.}
 unit AcMath;
@@ -100,7 +100,232 @@ function AcQuaternion_Normalize(const AQuat: TAcVector4): TAcVector4;
 function AcQuaternion_Mult(const AQuat1, AQuat2: TAcVector4): TAcVector4;
 function AcQuaternion_Conjugate(const AQuat: TAcVector4): TAcVector4;
 
+function AcCullAABB(const ABox: TAcAABB; const AFrustrum: TAcFrustrum): Boolean;
+procedure AcCalcFrustrum(const AViewMatrix, AProjMatrix: TAcMatrix;
+  var AFrustrum: TAcFrustrum);
+function AcPlaneDotVec3(const APlane: TAcPlane; const AVec3: TAcVector3): Single;
+
+function AcMin(a, b: Single): Single;{$IFDEF SUPPORTS_INLINE}inline;{$ENDIF}
+function AcMax(a, b: Single): Single;{$IFDEF SUPPORTS_INLINE}inline;{$ENDIF}
+procedure AcVecMinMax(var ABox: TAcAABB; const AVec: TAcVector3; AInit: Boolean);
+procedure AcBoxMinMax(var ABox1: TAcAABB; const ABox2: TAcAABB; AInit: Boolean);
+
+function AcMatrix_Invert(AMatIn: TAcMatrix; var AMatOut: TAcMatrix): Boolean;
+
 implementation
+
+function IsSmaller(const AMat: TAcMatrix; ARow1, ARow2: integer): boolean;{$IFDEF SUPPORTS_INLINE}inline;{$ENDIF}
+var
+  i: integer;
+begin
+  result := false;
+  for i := 0 to 3 do
+  begin
+    if Abs(AMat[ARow1, i]) < Abs(AMat[ARow2, i]) then
+    begin
+      result := true;
+      exit;
+    end else if Abs(AMat[ARow1, i]) > Abs(AMat[ARow2, i]) then
+      exit;
+  end;
+end;
+
+function AcMatrix_Invert(AMatIn: TAcMatrix; var AMatOut: TAcMatrix): Boolean;
+var
+  ind: array[0..3] of Integer;
+  i, j, tmp: integer;
+  tmp_row: TAcVector4;
+  cpy: TAcMatrix;
+  fac1, fac2: Single;
+begin
+  AMatOut := AcMatrix_Identity;
+
+  //Initialize the indices
+  ind[0] := 0; ind[1] := 1; ind[2] := 2; ind[3] := 3;
+
+  //Piviot the matrix rows
+  for i := 0 to 3 do
+  begin
+    for j := 1 to 3 - i do
+      if IsSmaller(AMatIn, ind[j - 1], ind[j]) then
+      begin
+        tmp := ind[j - 1];
+        ind[j - 1] := ind[j];
+        ind[j] := tmp;
+      end;
+  end;
+
+  //Apply the gaussian solve algorithm
+
+  //Create the triangle form 1
+  for i := 0 to 3 do //Columns
+  begin
+    for j := i + 1 to 3 do
+    begin
+      fac1 := AMatIn[ind[j]][i];
+      fac2 := AMatIn[ind[i]][i];
+
+      tmp_row := AcVectorMul(PAcVector4(@AMatIn[ind[i]][0])^, fac1);
+      PAcVector4(@AMatIn [ind[j]][0])^ := AcVectorMul(PAcVector4(@AMatIn [ind[j]][0])^, fac2);
+      PAcVector4(@AMatIn [ind[j]][0])^ := AcVectorSub(PAcVector4(@AMatIn [ind[j]][0])^, tmp_row);
+
+      tmp_row := AcVectorMul(PAcVector4(@AMatOut[ind[i]][0])^, fac1);
+      PAcVector4(@AMatOut [ind[j]][0])^ := AcVectorMul(PAcVector4(@AMatOut [ind[j]][0])^, fac2);
+      PAcVector4(@AMatOut [ind[j]][0])^ := AcVectorSub(PAcVector4(@AMatOut [ind[j]][0])^, tmp_row);
+    end;
+  end;
+
+  //Create the triangle form 2
+  for i := 3 downto 0 do //Columns
+  begin
+    for j := i - 1 downto 0 do
+    begin
+      fac1 := AMatIn[ind[j]][i];
+      fac2 := AMatIn[ind[i]][i];
+
+      tmp_row := AcVectorMul(PAcVector4(@AMatIn[ind[i]][0])^, fac1);
+      PAcVector4(@AMatIn [ind[j]][0])^ := AcVectorMul(PAcVector4(@AMatIn [ind[j]][0])^, fac2);
+      PAcVector4(@AMatIn [ind[j]][0])^ := AcVectorSub(PAcVector4(@AMatIn [ind[j]][0])^, tmp_row);
+
+      tmp_row := AcVectorMul(PAcVector4(@AMatOut[ind[i]][0])^, fac1);
+      PAcVector4(@AMatOut [ind[j]][0])^ := AcVectorMul(PAcVector4(@AMatOut [ind[j]][0])^, fac2);
+      PAcVector4(@AMatOut [ind[j]][0])^ := AcVectorSub(PAcVector4(@AMatOut [ind[j]][0])^, tmp_row);
+    end;
+  end;
+
+  for i := 0 to 3 do
+  begin
+    //Scale the rows down
+    PAcVector4(@AMatOut[ind[i]][0])^ :=  AcVectorMul(PAcVector4(@AMatOut[ind[i]][0])^, 1 / AMatIn[ind[i], i]);
+    PAcVector4(@AMatIn [ind[i]][0])^  := AcVectorMul(PAcVector4(@AMatIn [ind[i]][0])^, 1 / AMatIn[ind[i], i]);
+  end;
+
+  result := true;
+
+  //Exchange the result matrix rows
+  cpy := AMatOut;
+  for i := 0 to 3 do
+    AMatOut[i] := cpy[ind[i]];
+end;
+
+procedure AcBoxMinMax(var ABox1: TAcAABB; const ABox2: TAcAABB; AInit: Boolean);
+begin
+  AcVecMinMax(ABox1, ABox2.min, AInit);
+  AcVecMinMax(ABox1, ABox2.max, false);
+end;
+
+procedure AcVecMinMax(var ABox: TAcAABB; const AVec: TAcVector3; AInit: Boolean);
+begin
+  if (AVec.x > ABox.max.x) or AInit then
+    ABox.max.x := AVec.x;
+  if (AVec.x < ABox.min.x) or AInit then
+    ABox.min.x := AVec.x;
+
+  if (AVec.y > ABox.max.y) or AInit then
+    ABox.max.y := AVec.y;
+  if (AVec.y < ABox.min.y) or AInit then
+    ABox.min.y := AVec.y;
+
+  if (AVec.z > ABox.max.z) or AInit then
+    ABox.max.z := AVec.z;
+  if (AVec.z < ABox.min.z) or AInit then
+    ABox.min.z := AVec.z;
+end;
+
+function AcMin(a, b: Single): Single;
+begin
+  if (a > b) then
+    result := b
+  else
+    result := a;
+end;
+
+function AcMax(a, b: Single): Single;
+begin
+  if (a > b) then
+    result := a
+  else
+    result := b;
+end;
+
+function AcPlaneDotVec3(const APlane: TAcPlane; const AVec3: TAcVector3): Single;
+begin
+  result :=
+    AcVectorDot(TAcVector4(APlane), AcVector4(AVec3, 1));
+end;
+
+function AcCullAABB(const ABox: TAcAABB; const AFrustrum: TAcFrustrum): Boolean;
+var
+  extreme: TAcVector3;
+  i, j: integer;
+begin
+  result := false;
+  
+  for i := 0 to 5 do
+  begin
+    //Extract the extrem vector for this clipping plane
+    for j := 0 to 2 do
+      if AFrustrum[i].elems[j] < 0 then
+        extreme.elems[j] := AcMin(ABox.min.elems[j], ABox.max.elems[j])
+      else
+        extreme.elems[j] := AcMax(ABox.min.elems[j], ABox.max.elems[j]);
+
+    if AcPlaneDotVec3(AFrustrum[i], extreme) <= 0 then
+      exit;
+  end;
+
+  result := true;
+end;
+
+procedure AcCalcFrustrum(const AViewMatrix, AProjMatrix: TAcMatrix;
+  var AFrustrum: TAcFrustrum);
+var
+  mat: TAcMatrix;
+begin
+  mat := AcMatrix_Multiply(AViewMatrix, AProjMatrix);
+
+  //Linke clipping plane                           //! Use SSE here!
+  AFrustrum[0].a := mat[0,3] + mat[0,0];
+  AFrustrum[0].b := mat[1,3] + mat[1,0];
+  AFrustrum[0].c := mat[2,3] + mat[2,0];
+  AFrustrum[0].d := mat[3,3] + mat[3,0];
+  AFrustrum[0] := TAcPlane(AcVectorNormalize(TAcVector4(AFrustrum[0])));
+
+  //Right clipping plane
+  AFrustrum[1].a := mat[0,3] - mat[0,0];
+  AFrustrum[1].b := mat[1,3] - mat[1,0];
+  AFrustrum[1].c := mat[2,3] - mat[2,0];
+  AFrustrum[1].d := mat[3,3] - mat[3,0];
+  AFrustrum[1] := TAcPlane(AcVectorNormalize(TAcVector4(AFrustrum[1])));
+
+  //Upper clipping plane
+  AFrustrum[2].a := mat[0,3] - mat[0,1];
+  AFrustrum[2].b := mat[1,3] - mat[1,1];
+  AFrustrum[2].c := mat[2,3] - mat[2,1];
+  AFrustrum[2].d := mat[3,3] - mat[3,1];
+  AFrustrum[2] := TAcPlane(AcVectorNormalize(TAcVector4(AFrustrum[2])));
+
+  //Lower clipping plane
+  AFrustrum[3].a := mat[0,3] + mat[0,1];
+  AFrustrum[3].b := mat[1,3] + mat[1,1];
+  AFrustrum[3].c := mat[2,3] + mat[2,1];
+  AFrustrum[3].d := mat[3,3] + mat[3,1];
+  AFrustrum[3] := TAcPlane(AcVectorNormalize(TAcVector4(AFrustrum[3])));
+
+  //Front clipping plane
+  AFrustrum[4].a := mat[0,3];// + mat[0,2];
+  AFrustrum[4].b := mat[1,3];// + mat[1,2];
+  AFrustrum[4].c := mat[2,3];// + mat[2,2];
+  AFrustrum[4].d := mat[3,3];// + mat[3,2];
+  AFrustrum[4] := TAcPlane(AcVectorNormalize(TAcVector4(AFrustrum[4])));
+
+  //Back clipping plane
+  AFrustrum[5].a := mat[0,3] - mat[0,2];
+  AFrustrum[5].b := mat[1,3] - mat[1,2];
+  AFrustrum[5].c := mat[2,3] - mat[2,2];
+  AFrustrum[5].d := mat[3,3] - mat[3,2];
+  AFrustrum[5] := TAcPlane(AcVectorNormalize(TAcVector4(AFrustrum[5])));
+end;
 
 function AcQuaternion_Conjugate(const AQuat: TAcVector4): TAcVector4;
 begin
@@ -456,11 +681,11 @@ end;
 {The procedures listed here are taken from the VectorGeometry.pas from the
  GLScene project. For more details see above.}
 
-{$IFDEF SUPPORTS_MESSAGE}
+(* {$IFDEF SUPPORTS_MESSAGE}
 {$MESSAGE HINT 'Andorra Commons may use the AMD 3DNow optimization. This code is not tested!'}
 {$MESSAGE HINT 'If you encounter any problem, activate the DO_NOT_USE_3DNOW compiler switch in andorra_conf.inc and report this problem to the Andorra Commons developers. Thank you.'}
 {$MESSAGE HINT 'If you are using an AMD processor and everything works fine, it would be great if you could report this.'}
-{$ENDIF}
+{$ENDIF}    *)
 
 function _3DNOW_AcMatrix_Multiply(const amat1, amat2:TAcMatrix):TAcMatrix;
 begin

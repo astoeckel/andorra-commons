@@ -319,10 +319,10 @@ begin
   st := 1;
 
   SetLength(s, Length(AStr2));
-  for i := 1 to Length(AStr1) do
+  for i := 1 to Length(AStr1) + 1 do
   begin
     //Search for the first '.'
-    if (AStr1[i] = '.') then
+    if (i = Length(AStr1) + 1) or (AStr1[i] = '.') then
     begin
       if l = Length(AStr2) then
       begin

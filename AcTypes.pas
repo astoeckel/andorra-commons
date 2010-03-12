@@ -107,19 +107,23 @@ type
   PAcUInt8 = ^AcUInt8;
   PAcUInt16 = ^AcUInt16;
   PAcUInt32 = ^AcUInt32;
+  
   PAcFloat = ^AcFloat;
   PAcDouble = ^AcDouble;
   PAcBool = ^AcBool;
 
   PAcVector1 = ^TAcVector1;
   TAcVector1 = packed record
-    x: single;
+    case Integer of
+      0: (x: single);
+      1: (elems: array[0..0] of Single);
   end;
 
   TAcVector2 = packed record
     case Integer of
       0: (x, y: single);
       1: (vec1: TAcVector1);
+      2: (elems: array[0..1] of Single);
   end;
   PAcVector2 = ^TAcVector2;
 
@@ -127,6 +131,7 @@ type
     case Integer of
       0: (x, y, z: single);
       1: (vec2: TAcVector2);
+      2: (elems: array[0..2] of Single);
   end;
   PAcVector3 = ^TAcVector3;
 
@@ -134,25 +139,44 @@ type
     case Integer of
       0: (x, y, z, w: single);
       1: (vec3: TAcVector3);
+      2: (elems: array[0..3] of Single);
   end;
   PAcVector4 = ^TAcVector4;
 
   {A standard 4x4 matrix.}
   TAcMatrix = array[0..3] of array[0..3] of single;
+  PAcMatrix = ^TAcMatrix;
 
-function AcVector1(AX:single): TAcVector1;overload;
+  TAcPlane = record
+    case Integer of
+      0: (a, b, c, d: Single);
+      1: (elems: array[0..3] of Single);
+      2: (normal: TAcVector3);
+  end;
+  PAcPlane = ^TAcPlane;
+
+  TAcFrustrum = array[0..5] of TAcPlane;
+  PAcFrustrum = ^TAcFrustrum;
+
+  TAcAABB = record
+    min: TAcVector3;
+    max: TAcVector3;
+  end;
+  PAcAABB = ^TAcAABB;
+
+function AcVector1(AX:single): TAcVector1;{$IFDEF SUPPORTS_INLINE}inline;{$ENDIF}overload;
 {Returns a vector with two components.}
-function AcVector2(AX,AY:single):TAcVector2;overload;
+function AcVector2(AX,AY:single):TAcVector2;{$IFDEF SUPPORTS_INLINE}inline;{$ENDIF}overload;
 {Returns a vector with two components.}
-function AcVector2(AVec: TAcVector1; AY:single):TAcVector2;overload;
+function AcVector2(AVec: TAcVector1; AY:single):TAcVector2;{$IFDEF SUPPORTS_INLINE}inline;{$ENDIF}overload;
 {Returns a vector with three components.}
-function AcVector3(AX,AY,AZ:single):TAcVector3;overload;
+function AcVector3(AX,AY,AZ:single):TAcVector3;{$IFDEF SUPPORTS_INLINE}inline;{$ENDIF}overload;
 {Returns a vector with three components.}
-function AcVector3(AVec: TAcVector2; AZ: single): TAcVector3;overload;
+function AcVector3(AVec: TAcVector2; AZ: single): TAcVector3;{$IFDEF SUPPORTS_INLINE}inline;{$ENDIF}overload;
 {Returns a vector with four components.}
-function AcVector4(AX, AY, AZ, AW:single):TAcVector4;overload;
+function AcVector4(AX, AY, AZ, AW:single):TAcVector4;{$IFDEF SUPPORTS_INLINE}inline;{$ENDIF}overload;
 {Returns a vector with four components.}
-function AcVector4(AVec: TAcVector3; AW: single): TAcVector4;overload;
+function AcVector4(AVec: TAcVector3; AW: single): TAcVector4;{$IFDEF SUPPORTS_INLINE}inline;{$ENDIF}overload;
 
 function AcVectorLength(AVec: TAcVector1): Single; overload;
 function AcVectorLength(AVec: TAcVector2): Single; overload;
