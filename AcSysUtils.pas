@@ -40,11 +40,16 @@ unit AcSysUtils;
 
 interface
 
+{$INCLUDE commons_conf.inc}
+
 {$IFNDEF WIN32}
 uses
   SysUtils, LclIntf, libc, cThreads, dynlibs;
 {$ELSE}
 uses
+  {$IFDEF DO_USE_FASTMOVE}
+  AcFastMove,
+  {$ENDIF}
   Windows;
 {$ENDIF}
 
@@ -82,6 +87,7 @@ function AcFreeLibrary(AHandle: TAcHandle): Boolean;
 
 var
   AcGetTickCount: TAcGetTickCountProc;
+  AcMove: procedure(const Source; var Dest; Count : Integer);
 
 implementation
 
@@ -209,5 +215,11 @@ initialization
   {$ELSE}
     AcGetTickCount := LAZ_SW_TICKCOUNT;
   {$ENDIF}
-
+  
+  //Connect the move function
+  {$IFDEF DO_USE_FASTMOVE}
+  AcMove := AcFastMove.Move;
+  {$ELSE}
+  AcMove := System.Move;
+  {$ENDIF}
 end.

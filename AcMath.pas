@@ -85,18 +85,7 @@ function AcMatrix_Proj_Ortho(const left, right, bottom, top, zNear, zFar: double
  the camera.}
 function AcMatrix_View_LookAt(const Pos, Dir, Up: TAcVector3): TAcMatrix;
 
-function AcVector_Length(const AVec: TAcVector3): Double;
-function AcVector_Normalize(const AVec: TAcVector3): TAcVector3;
-function AcVector_Cross(const AVec1, AVec2: TAcVector3): TAcVector3;
-function AcVector_Dot(const AVec1, AVec2: TAcVector3): double;
-function AcVector_Sub(const AVec1, AVec2: TAcVector3): TAcVector3;
-function AcVector_Add(const AVec1, AVec2: TAcVector3): TAcVector3;
-function AcVector_MultFloat(const AVec1: TAcVector3; const AFloat: single): TAcVector3;
-function AcVector_FromQuat(const AQuat: TAcVector4): TAcVector3;
-
 function AcQuaternion_MultVector(const AQuat: TAcVector4; const AVec: TAcVector3): TAcVector3;
-function AcQuaternion_Length(const AQuat: TAcVector4): Single;
-function AcQuaternion_Normalize(const AQuat: TAcVector4): TAcVector4;
 function AcQuaternion_Mult(const AQuat1, AQuat2: TAcVector4): TAcVector4;
 function AcQuaternion_Conjugate(const AQuat: TAcVector4): TAcVector4;
 
@@ -112,7 +101,60 @@ procedure AcBoxMinMax(var ABox1: TAcAABB; const ABox2: TAcAABB; AInit: Boolean);
 
 function AcMatrix_Invert(AMatIn: TAcMatrix; var AMatOut: TAcMatrix): Boolean;
 
+function AcTriangleRayIntersect(const ATriangle: TAcTriangle; const ARay: TAcRay;
+  out ADist: Single): Boolean;
+
 implementation
+
+const
+  epsilon = 0.000001;
+
+//This algorithm has be taken from
+//http://www.cs.virginia.edu/~gfx/Courses/2003/ImageSynthesis/papers/Acceleration/Fast%20MinimumStorage%20RayTriangle%20Intersection.pdf
+//by Tomas Möller and Ben Trumbore
+function AcTriangleRayIntersect(const ATriangle: TAcTriangle; const ARay: TAcRay;
+  out ADist: Single): Boolean;
+var
+  edge1, edge2: TAcVector3;
+  tvec, pvec, qvec: TAcVector3;
+  det, u, v, inv_det: Single;
+begin
+  result := false;
+
+  // find vectors for two edges sharing vert0//
+  edge1 := AcVectorSub(ATriangle.e2, ATriangle.e1);
+  edge2 := AcVectorSub(ATriangle.e3, ATriangle.e1);
+
+  //begin calculating determinant - also used to calculate U parameter
+  pvec := AcVectorCross(ARay.dir0, edge2);
+  det := AcVectorDot(edge1, pvec);
+
+  //if determinant is near zero, ray lies in plane of triangle
+  if (det > epsilon) or (det < -epsilon) then
+  begin
+    inv_det := 1 / det;
+
+    //calculate distance from vert0 to ray origin
+    tvec := AcVectorSub(ARay.origin, ATriangle.e1);
+
+    //calculate U parameter and test bounds
+    u := AcVectorDot(tvec, pvec) * inv_det;
+    if (u < 0) or (u >1) then
+      exit;
+
+    //calculate V parameter and test bounds
+    qvec := AcVectorCross(tvec, edge1);
+    v := AcVectorDot(ARay.dir0, qvec) * inv_det;
+    if (v < 0) or (v + u > 1) then
+      exit;
+
+    //Calculate t parameter (ADist)
+    ADist := AcVectorDot(edge2, qvec) * inv_det;
+
+    //Only return true if the triangle lies in positive direction
+    result := ADist > 0;
+  end;
+end;
 
 function IsSmaller(const AMat: TAcMatrix; ARow1, ARow2: integer): boolean;{$IFDEF SUPPORTS_INLINE}inline;{$ENDIF}
 var
@@ -335,23 +377,6 @@ begin
   result.w := -AQuat.w;
 end;
 
-function AcQuaternion_Length(const AQuat: TAcVector4): Single;
-begin
-  result :=
-    Sqrt(Sqr(AQuat.x) + Sqr(AQuat.y) + Sqr(AQuat.z) + Sqr(AQuat.w));
-end;
-
-function AcQuaternion_Normalize(const AQuat: TAcVector4): TAcVector4;
-var
-  l: Single;
-begin
-  l := AcQuaternion_Length(AQuat);
-  result.x := AQuat.x / l;
-  result.y := AQuat.y / l;
-  result.z := AQuat.z / l;
-  result.w := AQuat.w / l;
-end;
-
 function AcVector_FromQuat(const AQuat: TAcVector4): TAcVector3;
 begin
   result.x := AQuat.y;
@@ -366,15 +391,15 @@ begin
   a := AcVector_FromQuat(AQuat1);
   b := AcVector_FromQuat(AQuat2);
 
-  c := AcVector_Add(
-    AcVector_Add(
-      AcVector_MultFloat(a, AQuat1.x),
-      AcVector_MultFloat(b, AQuat1.x)),
-    AcVector_Cross(a, b)
+  c := AcVectorAdd(
+    AcVectorAdd(
+      AcVectorMul(a, AQuat1.x),
+      AcVectorMul(b, AQuat1.x)),
+    AcVectorCross(a, b)
   );
 
   result.x := AQuat1.x * AQuat2.x -
-    AcVector_Dot(a, b);
+    AcVectorDot(a, b);
   result.y := c.x;
   result.z := c.y;
   result.w := c.z;

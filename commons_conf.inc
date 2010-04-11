@@ -42,6 +42,14 @@
 //Remove ' if you do not want to use the VCL in your application.
 {$DEFINE DO_NOT_USE_VCL}
 
+{$IFNDEF FPC}
+  //Add a ' if you do not want to use the FastMove library in the andorra commons library
+  {$DEFINE DO_USE_FASTMOVE}
+  
+  //Remove the ' if all move calls should be automatically replaced by the fast move code.
+  {$DEFINE PatchSystemMove} {Enable Patching of System.Move}  
+{$ENDIF}
+
 {$ENDIF}
 
 

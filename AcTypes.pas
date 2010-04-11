@@ -164,6 +164,21 @@ type
   end;
   PAcAABB = ^TAcAABB;
 
+  TAcTriangle = record
+    case Integer of
+      0: (e1, e2, e3: TAcVector3);
+      1: (elems: array[0..2] of TAcVector3);
+  end;
+  PAcTriangle = ^TAcTriangle;
+
+  TAcRay = record
+    origin: TAcVector3;
+    dir0: TAcVector3;
+  end;
+  PAcRay = ^TAcRay;
+
+  TAcNotifyEvent = procedure(Sender: TObject) of object;
+
 function AcVector1(AX:single): TAcVector1;{$IFDEF SUPPORTS_INLINE}inline;{$ENDIF}overload;
 {Returns a vector with two components.}
 function AcVector2(AX,AY:single):TAcVector2;{$IFDEF SUPPORTS_INLINE}inline;{$ENDIF}overload;
@@ -210,6 +225,13 @@ function AcVectorMul(AVec: TAcVector4; r: Single): TAcVector4;overload;
 
 function AcVectorCross(AVec1, AVec2: TAcVector3): TAcVector3;overload;
 
+function AcTriangle(const AVec1, AVec2, AVec3: TAcVector3): TAcTriangle;overload;
+function AcTriangle(const ax1, ay1, az1, ax2, ay2, az2, ax3, ay3,
+  az3: Single): TAcTriangle;overload;
+
+function AcRay(const AOrigin, ADirection: TAcVector3): TAcRay;
+function AcRayPnts(const AFrom, ATo: TAcVector3): TAcRay; 
+
 const
   {A matrix which only contains zero values}
   AcMatrix_Clear    : TAcMatrix = ((0,0,0,0),(0,0,0,0),(0,0,0,0),(0,0,0,0));
@@ -217,6 +239,42 @@ const
   AcMatrix_Identity : TAcMatrix = ((1,0,0,0),(0,1,0,0),(0,0,1,0),(0,0,0,1));
 
 implementation
+
+function AcTriangle(const AVec1, AVec2, AVec3: TAcVector3): TAcTriangle;overload;
+begin
+  with result do
+  begin
+    e1 := AVec1;
+    e2 := AVec2;
+    e3 := AVec3;
+  end;
+end;
+
+function AcTriangle(const ax1, ay1, az1, ax2, ay2, az2, ax3, ay3,
+  az3: Single): TAcTriangle;overload;
+begin
+  with result do
+  begin
+    e1 := AcVector3(ax1, ay1, az1);
+    e2 := AcVector3(ax2, ay2, az2);
+    e3 := AcVector3(ax3, ay3, az3);
+  end;
+end;
+
+function AcRay(const AOrigin, ADirection: TAcVector3): TAcRay;
+begin
+  with result do
+  begin
+    origin := AOrigin;
+    dir0 := ADirection;
+  end;
+end;
+
+function AcRayPnts(const AFrom, ATo: TAcVector3): TAcRay;
+begin
+  result.origin := AFrom;
+  result.dir0 := AcVectorNormalize(AcVectorSub(ATo, AFrom)); 
+end;
 
 function AcVectorLength(AVec: TAcVector1): Single; overload;
 begin
