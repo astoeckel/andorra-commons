@@ -44,7 +44,7 @@ interface
 
 {$IFNDEF WIN32}
 uses
-  SysUtils, LclIntf, libc, cThreads, dynlibs;
+  SysUtils, LclIntf, cThreads, dynlibs;
 {$ELSE}
 uses
   {$IFDEF DO_USE_FASTMOVE}
