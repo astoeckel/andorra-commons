@@ -6,12 +6,29 @@ unit AcSyncObjs;
 
 interface
 
+{$INCLUDE andorra.inc}
+
+//Determine whether the mutex object is available
+{$DEFINE HAS_MUTEX}
+{$IFDEF FPC}
+  {$UNDEF HAS_MUTEX}
+{$ENDIF}
+{$IFDEF DELPHI_5_DOWN}
+  {$UNDEF HAS_MUTEX}
+{$ENDIF}
+{$IFDEF VER140}
+  {$UNDEF HAS_MUTEX}
+{$ENDIF}
+{$IFDEF VER150}
+  {$UNDEF HAS_MUTEX}
+{$ENDIF}
+
 uses
   SysUtils, SyncObjs;
 
 type
   TAcCriticalSection = TCriticalSection;
-  {$IFDEF FPC}
+  {$IFNDEF HAS_MUTEX}
   TAcMutex = class(TSynchroObject)
     private
       FCritSect: TCriticalSection;
@@ -26,7 +43,7 @@ type
       procedure Release;override;
   end;
   {$ELSE}
-  TAcMutex = TMutex;
+  TAcMutex = class(TMutex);
   {$ENDIF}
 
   { TAcLock }
@@ -39,7 +56,7 @@ type
 
 implementation
 
-{$IFDEF FPC}
+{$IFNDEF HAS_MUTEX}
 
 uses
   AcSysUtils;
@@ -64,15 +81,17 @@ end;
 procedure TAcMutex.Acquire;
 var
   h: Cardinal;
+  b: Boolean;
 begin
   FIntCritSect.Enter;
   try
     h := AcGetCurrentThreadId;
+    b := h <> FHandle;
   finally
     FIntCritSect.Leave;
   end;
 
-  if h <> FHandle then
+  if b then
   begin
     FCritSect.Enter;
 
@@ -85,13 +104,28 @@ begin
     end;
   end
   else
-    FEnterCount := FEnterCount + 1;
-
+  begin
+    FIntCritSect.Enter;
+    try
+      FEnterCount := FEnterCount + 1;
+    finally
+      FIntCritSect.Leave;;
+    end;
+  end;
 end;
 
 procedure TAcMutex.Release;
+var
+  b: Boolean;
 begin
-  if (FEnterCount = 0) then
+  FIntCritSect.Enter;
+  try
+    b := FEnterCount = 0;
+  finally
+    FIntCritSect.Leave;
+  end;
+
+  if b then
   begin
     FCritSect.Leave;
     FIntCritSect.Enter;
@@ -101,7 +135,14 @@ begin
       FIntCritSect.Leave;
     end;
   end else
-    FEnterCount := FEnterCount - 1;
+  begin
+    FIntCritSect.Enter;
+    try
+      FEnterCount := FEnterCount - 1;
+    finally
+      FIntCritSect.Leave;
+    end;
+  end;
 end;
 {$ENDIF}
 

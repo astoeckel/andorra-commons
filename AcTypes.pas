@@ -56,7 +56,7 @@ type
   //8-Bit signed integer
   AcInt8 = ShortInt;
   //16-Bit signed integer
-  AcInt16 = LongInt;
+  AcInt16 = SmallInt;
   //32-Bit signed integer
   AcInt32 = Integer;
   //64-Bit signed integer
@@ -100,6 +100,9 @@ type
   AcBool = ByteBool;
   {$ENDIF}
 
+  AcInt24 = array[0..2] of Byte;
+  PAcInt24 = ^AcInt24;
+
   PAcInt8 = ^AcInt8;
   PAcInt16 = ^AcInt16;
   PAcInt32 = ^AcInt32;
@@ -111,6 +114,11 @@ type
   PAcFloat = ^AcFloat;
   PAcDouble = ^AcDouble;
   PAcBool = ^AcBool;
+
+  TAcEndian = (
+    acBigEndian,
+    acLittleEndian
+  );
 
   PAcVector1 = ^TAcVector1;
   TAcVector1 = packed record
@@ -230,7 +238,14 @@ function AcTriangle(const ax1, ay1, az1, ax2, ay2, az2, ax3, ay3,
   az3: Single): TAcTriangle;overload;
 
 function AcRay(const AOrigin, ADirection: TAcVector3): TAcRay;
-function AcRayPnts(const AFrom, ATo: TAcVector3): TAcRay; 
+function AcRayPnts(const AFrom, ATo: TAcVector3): TAcRay;
+
+//! Add compiler switches for freepascal
+const
+  AcMachineEndian: TAcEndian = acLittleEndian;
+  
+procedure AcConvertEndian(ASrc, ADest: Pointer; const ASize: Integer;
+  const ASrcEndian: TAcEndian; const ADestEndian: TAcEndian = acLittleEndian);
 
 const
   {A matrix which only contains zero values}
@@ -239,6 +254,35 @@ const
   AcMatrix_Identity : TAcMatrix = ((1,0,0,0),(0,1,0,0),(0,0,1,0),(0,0,0,1));
 
 implementation
+
+procedure AcConvertEndian(ASrc, ADest: Pointer; const ASize: Integer;
+  const ASrcEndian: TAcEndian; const ADestEndian: TAcEndian = acLittleEndian);
+var
+  i: integer;
+begin
+  if ASrcEndian = ADestEndian then
+  begin
+    //If source and destination endian are equal, no conversion has to be done,
+    //the bytes are just copied from source to destination
+    for i := 0 to ASize - 1 do
+    begin
+      PByte(ADest)^ := PByte(ASrc)^;
+      inc(PByte(ASrc));
+      inc(PByte(ADest));
+    end;
+  end else
+  begin
+    //If source and destination endian are unequal, the bytes are copied from
+    //source to destination in reverse order.
+    inc(PByte(ADest), ASize - 1);
+    for i := 0 to ASize - 1 do
+    begin
+      PByte(ADest)^ := PByte(ASrc)^;
+      inc(PByte(ASrc));
+      dec(PByte(ADest));
+    end;
+  end;  
+end;
 
 function AcTriangle(const AVec1, AVec2, AVec3: TAcVector3): TAcTriangle;overload;
 begin

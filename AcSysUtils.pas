@@ -44,7 +44,7 @@ interface
 
 {$IFNDEF WIN32}
 uses
-  SysUtils, LclIntf, cThreads, dynlibs;
+  SysUtils, cThreads, dynlibs;
 {$ELSE}
 uses
   {$IFDEF DO_USE_FASTMOVE}
@@ -130,7 +130,7 @@ end;
 
 function LAZ_SW_TICKCOUNT: Double;
 begin
-  result := GetTickCount;
+  result := Now * 24 * 60 * 60 * 1000;
 end;
 
 function AcGetCurrentThreadID: Cardinal;

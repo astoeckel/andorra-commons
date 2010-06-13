@@ -50,6 +50,11 @@
   {$DEFINE PatchSystemMove} {Enable Patching of System.Move}  
 {$ENDIF}
 
+//--------------------------------
+//--- ANDORRA NOTIFICATION QUEUE SETTINGS ---
+
+{$DEFINE AC_NOTIFY_AUTO}
+
 {$ENDIF}
 
 
