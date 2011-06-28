@@ -24,7 +24,7 @@ interface
 {$ENDIF}
 
 uses
-  SysUtils, SyncObjs;
+  SyncObjs;
 
 type
   TAcCriticalSection = TCriticalSection;

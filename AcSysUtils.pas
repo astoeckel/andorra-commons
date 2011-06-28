@@ -87,12 +87,10 @@ function AcFreeLibrary(AHandle: TAcHandle): Boolean;
 
 var
   AcGetTickCount: TAcGetTickCountProc;
-  {$IFDEF CPU32}
-  AcMove: procedure(const Source; var Dest; Count : Integer);
+  {$IFDEF CPU64}
+  AcMove: procedure(const Source; var Dest; Count : Int64);
   {$ELSE}
-    {$IFDEF CPU64}
-    AcMove: procedure(const Source; var Dest; Count : Int64);
-    {$ENDIF}
+  AcMove: procedure(const Source; var Dest; Count : Integer);
   {$ENDIF}
 
 implementation

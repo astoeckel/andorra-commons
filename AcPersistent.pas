@@ -244,10 +244,19 @@ const
   acceErr_Ver = 1;
 
 var
+  {AcRegSrv is the global variable which should be used instead of instanciating an own
+  TAcRegistrationServer object.
+  @seealso(TAcRegistrationServer)}
   AcRegSrv: TAcRegistrationServer = nil;
 {$IFDEF FPC}
+  {AcProgVer is a variable which represents the current TAcRegistrationServer interface
+  version. With each change in the TAcRegistrationServer insterface, which would lead
+  to incompatibilities when loading external modules, the version number gets incremented.}
   AcProgVer: TAcRegSrvVerStr = 'ACREGSRV LAZ 1.0';
 {$ELSE}
+  {AcProgVer is a variable which represents the current TAcRegistrationServer interface
+  version. With each change in the TAcRegistrationServer insterface, which would lead
+  to incompatibilities when loading external modules, the version number gets incremented.}
   AcProgVer: TAcRegSrvVerStr = 'ACREGSRV DEL 1.0';
 {$ENDIF}
 
