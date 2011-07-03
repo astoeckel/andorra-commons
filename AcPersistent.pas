@@ -42,7 +42,7 @@ unit AcPersistent;
 interface
 
 uses
-  AcContainers;
+  AcTypes, AcContainers;
 
 type
 
@@ -567,7 +567,7 @@ begin
   while not FClasses.ReachedEnd do
   begin
     itm := FClasses.GetCurrent;
-    WriteLn(itm.Name:30, ' | ', itm.IdentStr:50, ' | ', itm.SourceID:5, ' | ', '$'+IntToHex(Integer(itm.ClassConstructor)):10);
+    WriteLn(itm.Name:30, ' | ', itm.IdentStr:50, ' | ', itm.SourceID:5, ' | ', '$'+IntToHex(AcPtrInt(itm.ClassConstructor)):10);
   end;
 
   WriteLn;

@@ -27,6 +27,7 @@ uses
   SyncObjs;
 
 type
+  TAcSynchroObject = TSynchroObject;
   TAcCriticalSection = TCriticalSection;
   {$IFNDEF HAS_MUTEX}
   TAcMutex = class(TSynchroObject)
@@ -127,13 +128,14 @@ begin
 
   if b then
   begin
-    FCritSect.Leave;
     FIntCritSect.Enter;
     try
       FHandle := 0;
     finally
       FIntCritSect.Leave;
     end;
+
+    FCritSect.Leave;
   end else
   begin
     FIntCritSect.Enter;

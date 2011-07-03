@@ -63,6 +63,7 @@ type
     user_data: Pointer;//< The pointer supplied via the "AUserData" parameter of TAcNotifyMethod
     method: TAcNotifyMethod;//< The method which should be called when the notification is triggered 
     sender: TObject;//< The sender object which is supplied via the "ASender" parameter of TAcNotifyMethod
+    lock: TAcSynchroObject; //< An (optional) synchronization lock which will be entered before processing the method
   end;
   {A pointer on TAcNotification}
   PAcNotification = ^TAcNotification;
@@ -168,7 +169,8 @@ VCL or not).
 @param(AMethod specifies notification handling method.)
 @param(AUserData can be used to send some user defined data to the notification hander. Defaults to nil.)
 @seealso(TAcNotifyProcessor)}
-procedure AcNotifyQueue(ASender: TObject; AMethod: TAcNotifyMethod; AUserData: Pointer = nil);
+procedure AcNotifyQueue(ASender: TObject; AMethod: TAcNotifyMethod;
+  AUserData: Pointer = nil; ALock: TAcSynchroObject = nil);
 {Removes all notifications from the queue which have an reference to the specified object
 either in the "sender" or in the notification handler (TMethod.Data).}
 procedure AcNotifyRemoveObject(AObject: TObject);
@@ -283,20 +285,28 @@ begin
     FProcessMutex.Release;
   end;
 
-  FCallingMutex.Acquire;
+  // If the notification is bound to a lock, enter that lock
+  if ntfc.lock <> nil then
+    ntfc.lock.Acquire;
   try
-    FProcessMutex.Acquire;
+    FCallingMutex.Acquire;
     try
-      valid := FProcessNotification <> nil;
-    finally
-      FProcessMutex.Release;
-    end;
+      FProcessMutex.Acquire;
+      try
+        valid := FProcessNotification <> nil;
+      finally //FProcessMutex
+        FProcessMutex.Release;
+      end;
 
-    //Call the method specified in the notification record
-    if valid and hasntfc then
-      ntfc.method(ntfc.sender, ntfc.user_data);
-  finally
-    FCallingMutex.Release;
+      //Call the method specified in the notification record
+      if valid and hasntfc then
+        ntfc.method(ntfc.sender, ntfc.user_data);
+    finally //FCallingMutex
+      FCallingMutex.Release;
+    end;
+  finally //ntfc.lock
+    if ntfc.lock <> nil then
+      ntfc.lock.Release;
   end;
 
   FProcessMutex.Acquire;
@@ -468,7 +478,8 @@ begin
   ac_init := true;
 end;
 
-procedure AcNotifyQueue(ASender: TObject; AMethod: TAcNotifyMethod; AUserData: Pointer = nil);
+procedure AcNotifyQueue(ASender: TObject; AMethod: TAcNotifyMethod;
+  AUserData: Pointer; ALock: TAcSynchroObject);
 var
   notification: TAcNotification;
 begin
@@ -479,6 +490,7 @@ begin
   notification.sender := ASender;
   notification.method := AMethod;
   notification.user_data := AUserData;
+  notification.lock := ALock;
 
   //Add the notification
   ac_notify_processor.AddNotification(notification);
